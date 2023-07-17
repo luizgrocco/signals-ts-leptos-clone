@@ -17,12 +17,12 @@ class Signal<T> {
     // Add subscribers
     if (Runtime.runningEffectId != null) {
       // Why compare against null instead of "if (Runtime.runningEffectId)"? Answer: Because runningEffectId might be ZERO
-      const mySet =
+      const effectIdsSet =
         Runtime.signalSubscribers.get(this.#id) || new Set<EffectId>();
-      mySet.add(Runtime.runningEffectId);
+      effectIdsSet.add(Runtime.runningEffectId);
 
       if (!Runtime.signalSubscribers.has(this.#id)) {
-        Runtime.signalSubscribers.set(this.#id, mySet);
+        Runtime.signalSubscribers.set(this.#id, effectIdsSet);
       }
     }
 
@@ -39,9 +39,9 @@ class Signal<T> {
       const effectIds = Runtime.signalSubscribers.get(this.#id);
       if (effectIds) {
         // This line clones the effectIds into an array to prevent the signalSubscribers to be mutated during the effect running loop.
-        const stableIds = Array.from(effectIds);
+        const clonedEffectIds = Array.from(effectIds);
         // TODO: I am not 100% sure this is actually necessary, but it is worth investigating possible bugs that could arise from not cloning the effectIds here.
-        stableIds.forEach((effectId) => {
+        clonedEffectIds.forEach((effectId) => {
           Runtime.runEffect(effectId);
         });
       }
