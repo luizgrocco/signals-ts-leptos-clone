@@ -28,6 +28,19 @@ function main() {
     counterDoubled.textContent = doubleCount().toString();
   });
 
+  // Fibonacci test
+  // const first = createSignal(0);
+  // const fibs = new Array(50)
+  //   .fill(1)
+  //   .map((_, i) => i)
+  //   .filter((n) => n > 1)
+  //   .reduce(
+  //     (fibs, n) => [...fibs, () => fibs[n - 1]() + fibs[n - 2]()],
+  //     [() => first.get(), () => first.get() + 1]
+  //   );
+
+  // createEffect(() => console.log("Fib 60", fibs.at(-1)()), "Fib");
+
   // Add Listeners
   button1.addEventListener("click", () => {
     console.log("+1");

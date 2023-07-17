@@ -21,8 +21,9 @@ class Signal<T> {
         Runtime.signalSubscribers.get(this.#id) || new Set<EffectId>();
       mySet.add(Runtime.runningEffectId);
 
-      if (!Runtime.signalSubscribers.has(this.#id))
-        Runtime.signalSubscribers.set(Runtime.runningEffectId, mySet);
+      if (!Runtime.signalSubscribers.has(this.#id)) {
+        Runtime.signalSubscribers.set(this.#id, mySet);
+      }
     }
 
     // Return value
@@ -36,10 +37,14 @@ class Signal<T> {
     // Notify subscribers
     if (Runtime.signalSubscribers.has(this.#id)) {
       const effectIds = Runtime.signalSubscribers.get(this.#id);
-
-      effectIds?.forEach((effectId) => {
-        Runtime.runEffect(effectId);
-      });
+      if (effectIds) {
+        // This line clones the effectIds into an array to prevent the signalSubscribers to be mutated during the effect running loop.
+        const stableIds = Array.from(effectIds);
+        // TODO: I am not 100% sure this is actually necessary, but it is worth investigating possible bugs that could arise from not cloning the effectIds here.
+        stableIds.forEach((effectId) => {
+          Runtime.runEffect(effectId);
+        });
+      }
     }
   }
 }
