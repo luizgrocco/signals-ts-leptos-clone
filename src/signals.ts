@@ -20,8 +20,17 @@ class Signal<T> {
         Runtime.signalSubscribers.get(this.#id) || new Set<EffectId>();
       effectIdsSet.add(Runtime.runningEffectId);
 
+      const signalIdsSet =
+        Runtime.effectNotifiers.get(Runtime.runningEffectId) ||
+        new Set<SignalId>();
+      signalIdsSet.add(this.#id);
+
       if (!Runtime.signalSubscribers.has(this.#id)) {
         Runtime.signalSubscribers.set(this.#id, effectIdsSet);
+      }
+
+      if (!Runtime.effectNotifiers.has(Runtime.runningEffectId)) {
+        Runtime.effectNotifiers.set(Runtime.runningEffectId, signalIdsSet);
       }
     }
 
@@ -37,11 +46,18 @@ class Signal<T> {
     if (Runtime.signalSubscribers.has(this.#id)) {
       const effectIds = Runtime.signalSubscribers.get(this.#id);
       if (effectIds) {
-        // This line clones the effectIds into an array to prevent the signalSubscribers to be mutated during the effect running loop.
         const clonedEffectIds = Array.from(effectIds);
-        // Runtime.signalSubscribers.set(this.#id, new Set()); // Clear dependencies, but it is not enough
 
         clonedEffectIds.forEach((effectId) => {
+          const signalIds = Runtime.effectNotifiers.get(effectId);
+          if (signalIds) {
+            // Right before re-running the effect, eliminate this effect as a dependency from each signal that used to trigger it.
+            // Reason being the effect will re-run so it will re-aquire its dependencies.
+            signalIds.forEach(
+              (signalId) =>
+                Runtime.signalSubscribers.get(signalId)?.delete(effectId)
+            );
+          }
           Runtime.runEffect(effectId);
         });
       }
@@ -52,11 +68,15 @@ class Signal<T> {
 export class Runtime {
   static signalValues: unknown[] = [];
   static signalSubscribers: Map<SignalId, Set<EffectId>> = new Map();
+  static effectNotifiers: Map<EffectId, Set<SignalId>> = new Map();
   static runningEffectId: EffectId | null = null;
   static effects: Function[] = [];
 
-  static createSignal<T>(value: T): Signal<T> {
-    return new Signal<T>(value);
+  static createSignal<T>(value: T): [() => T, (value: T) => void] {
+    const signal = new Signal<T>(value);
+    const getter = () => signal.get();
+    const setter = (value: T) => signal.set(value);
+    return [getter, setter];
   }
 
   static createEffect(fn: Function) {
