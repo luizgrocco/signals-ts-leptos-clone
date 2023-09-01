@@ -53,7 +53,7 @@ class Signal<T> implements Subject {
 
       // Remove dependant Observers before notifying
       [...this.observers].forEach((observer) => {
-        observer.subjects.forEach((subject) =>
+        [...observer.subjects].forEach((subject) =>
           subject.unregisterObserver(observer)
         );
         // Notify Observers
